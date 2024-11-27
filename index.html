@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Prompt Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --danger: #dc2626;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 2rem;
+            margin: 2rem auto;
+        }
+
+        h1 {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h1:after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .option-card {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .option-card.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .option-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        textarea {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center">Resume Prompt Generator</h1>
+
+        <div class="row" style="min-height: 60vh;">
+            <!-- Left Pane -->
+            <div class="col-md-3 border-end">
+                <h5 class="mb-4 text-secondary">Choose Template</h5>
+                <div id="options">
+                    <div class="option-card" data-pane="personalProject">
+                        <p class="option-title">Personal Project</p>
+                    </div>
+                    <div class="option-card" data-pane="technicalSkills">
+                        <p class="option-title">Technical Skills</p>
+                    </div>
+                    <!-- <div class="option-card" data-pane="workEx">
+                        <p class="option-title">Work Experience</p>
+                    </div> -->
+                </div>
+            </div>
+
+            <!-- Right Pane -->
+            <div class="col-md-9">
+                <div class="h-100 d-flex flex-column">
+                    <label for="jobDescription" class="form-label">Job Description</label>
+                    <textarea 
+                        id="jobDescription" 
+                        class="form-control flex-grow-1" 
+                        placeholder="Paste job description, responsibilities, or qualifications here..."></textarea>
+                    
+                    <div class="d-flex gap-3 justify-content-end mt-4">
+                        <button id="copyBtn" class="btn btn-primary">
+                            Copy to Clipboard
+                        </button>
+                        <button id="clearBtn" class="btn btn-danger">
+                            Clear Text
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const prompts = {
+                personalProject: `give a personal project for the above job description. it should be plausible that a cs grad student did it in his free time and he is expert of required qualifications. Provide it in the following format (return Overleaf code):
+            \\item \\textbf{Project Name \\textbar\\hspace{0.2cm}Tech 1, Tech 2, ... } {\\begin{itemize}[topsep=0pt, partopsep=0pt, itemsep=0pt, parsep=0pt] 
+            \\item Point 1 
+            \\item Point 2 
+            \\item Point 3 
+            \\end{itemize}}`,
+                
+                technicalSkills: `modify skills section to align with the above job description (return Overleaf code):
+            \\begin{rSection}{TECHNICAL SKILLS}
+            \\textbf{Languages:} Python, Java, C/C++, Go, HTML, CSS, JavaScript, SQL\\\\ 
+            \\textbf{Libraries and Frameworks:} React.js, Node.js, Express.js, Springboot, Pandas, PyTorch, Tensorflow, Hadoop, Spark\\\\
+            \\textbf{Databases and Tools:} MySQL, MongoDB, Oracle SQL, PostgreSQL, Docker, Kubernetes, Jenkins, AWS, Git, Power BI
+            \\end{rSection}`,
+                
+                workEx: `Summarize relevant work experience that demonstrates your ability to meet the job requirements. Include metrics or impactful achievements wherever possible.`
+            };
+
+
+        const optionCards = document.querySelectorAll('.option-card');
+        const jobDescription = document.getElementById('jobDescription');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Option card click handling
+        optionCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove active class from all cards
+                optionCards.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked card
+                card.classList.add('active');
+                
+                const paneType = card.getAttribute('data-pane');
+                const prompt = prompts[paneType];
+
+                // Remove existing prompts
+                let text = jobDescription.value;
+                Object.values(prompts).forEach(existingPrompt => {
+                    text = text.replace(existingPrompt, '').trim();
+                });
+
+                // Add new prompt with animation
+                jobDescription.classList.remove('fade-in');
+                void jobDescription.offsetWidth; // Trigger reflow
+                jobDescription.classList.add('fade-in');
+                jobDescription.value = text + (text ? '\n\n' : '') + prompt;
+            });
+        });
+
+        // Copy to Clipboard
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(jobDescription.value);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                jobDescription.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
+            }
+        });
+
+        // Clear Text Area
+        clearBtn.addEventListener('click', () => {
+            jobDescription.value = '';
+            optionCards.forEach(card => card.classList.remove('active'));
+        });
+    </script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Prompt Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Resume Prompt Generator</a>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h1>Generate Custom Prompts</h1>
+        <form id="prompt-form">
+            <div class="mb-3">
+                <label for="jobDescription" class="form-label">Job Description</label>
+                <textarea class="form-control" id="jobDescription" rows="4" placeholder="Paste the job description here" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="resumeContent" class="form-label">Your Resume (Overleaf Code)</label>
+                <textarea class="form-control" id="resumeContent" rows="4" placeholder="Paste your Overleaf code here" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="instructions" class="form-label">Specific Instructions</label>
+                <input type="text" class="form-control" id="instructions" placeholder="E.g., Highlight achievements, focus on skills, etc.">
+            </div>
+            <button type="button" class="btn btn-primary" id="generatePrompt">Generate Prompt</button>
+            <button class="btn btn-secondary" id="copyPromptButton">Copy Prompt</button>
+        </form>
+        <hr>
+        <h2>Generated Prompt</h2>
+        <div id="promptOutput" class="border p-3 bg-light" style="white-space: pre-wrap;"></div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html> -->
